@@ -31,7 +31,12 @@
 (defn current-page []
   (:current-page @*pdf*))
 
+(defn ensure-page []
+  (if (not (current-page))
+    (add-page!)))
+
 (defn add-content-stream! []
+  (ensure-page)
   (let [cs (PDPageContentStream. (document)
                                  (current-page))]
     (swap! *pdf* assoc :content-stream cs)))
@@ -42,18 +47,19 @@
 (defn save [file]
   (.save (document) file))
 
+(defn draw-text [text])
 
 (comment
 
-  (do-pdf
-    (add-page!)
-    (with-open [content-stream (PDPageContentStream. (document) (current-page))]
-      (.beginText content-stream)
-      (.setFont content-stream PDType1Font/HELVETICA_BOLD 12)
-      (.moveTextPositionByAmount content-stream 100 700)
-      (.drawString content-stream "Hello World")
-      (.endText content-stream))
-    (save "test2.pdf"))
+    (do-pdf
+      (add-content-stream!)
+      (.beginText (content-stream))
+      (.setFont (content-stream) PDType1Font/HELVETICA_BOLD 12)
+      (.moveTextPositionByAmount (content-stream) 100 700)
+      (.drawString (content-stream) "Hello World...")
+      (.endText (content-stream))
+      (.close (content-stream))
+      (save "test2.pdf"))
 
     (do-pdf
       (add-page!)
