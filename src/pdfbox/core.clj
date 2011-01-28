@@ -56,6 +56,7 @@
   (:content-stream @*pdf*))
 
 (defn save [file]
+  (fire-finalizers!)
   (.save (document) file))
 
 (defn draw-text [text])
@@ -69,8 +70,6 @@
       (.moveTextPositionByAmount (content-stream) 100 700)
       (.drawString (content-stream) "Hello World..")
       (.endText (content-stream))
-      ;;(.close (content-stream))
-      (fire-finalizers!)
       (save "test2.pdf"))
 
     (do-pdf
