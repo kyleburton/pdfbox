@@ -17,11 +17,23 @@
 (defmacro do-pdf [& body]
   `(binding [~'*pdf* (atom {:document (PDDocument.)
                             :text-mode? (atom false)
+                            :font PDType1Font/HELVETICA_BOLD
+                            :font-size 12
                             :finalizers []})]
      (prog1
          (do
            ~@body)
        (fire-finalizers!))))
+
+(defn font [& [f]]
+  (if f
+    (swap! *pdf* assoc :font f))
+  (:font @*pdf*))
+
+(defn font-size [& [s]]
+  (if s
+    (swap! *pdf* assoc :font-size s))
+  (:font-size @*pdf*))
 
 (defn document []
   (:document @*pdf*))
@@ -88,15 +100,15 @@
 (defn write-line [text]
   (ensure-content-stream)
   (begin-text)
-  (.setFont (content-stream) PDType1Font/HELVETICA_BOLD 12)
+  (.setFont (content-stream) (font) (font-size))
   (.drawString (content-stream) text)
-  (move-text-position 0 (- (font-height PDType1Font/HELVETICA_BOLD)))
+  (move-text-position 0 (- (font-height (font))))
 )
 
 ;; height*fontSize*1.05f;
 (defn font-height [fnt]
   (* 1.05     ;; factor
-     12       ;; font-size
+     (font-size)
      (/ (-> fnt .getFontDescriptor .getFontBoundingBox .getHeight)
         1000)))
 
@@ -106,6 +118,7 @@
     (do-pdf
       (move-text-position 100 700)
       (write-line "some stuff, top")
+      (font-size 24)
       (write-line "some stuff, bottom")
       (save "test2.pdf"))
 
