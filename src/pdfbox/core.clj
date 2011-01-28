@@ -16,6 +16,7 @@
 
 (defmacro do-pdf [& body]
   `(binding [~'*pdf* (atom {:document (PDDocument.)
+                            :text-mode? (atom false)
                             :finalizers []})]
      (prog1
          (do
@@ -55,15 +56,23 @@
 (defn content-stream []
   (:content-stream @*pdf*))
 
+(defn- text-mode? []
+  @(:text-mode? @*pdf*))
+
 (defn save [file]
   (fire-finalizers!)
   (.save (document) file))
 
-(defn draw-text [text])
+(defn- close-text []
+  (when (text-mode?)
+    (.endText (content-stream))
+    (reset! (:text-mode? @*pdf*) false)))
 
 (defn- begin-text []
   (try
     (.beginText (content-stream))
+    (register-finalizer close-text)
+    (reset! (:text-mode? @*pdf*) true)
     (catch java.io.IOException e
       :ok)))
 
@@ -73,18 +82,13 @@
   (.moveTextPositionByAmount (content-stream) 100 700)
   (.drawString (content-stream) text))
 
-
 (comment
 
     (do-pdf
       (add-content-stream!)
-      (write-text "some stuff")
-      (.endText (content-stream))
+      (write-text "some stuff, closed")
+      ;;(.endText (content-stream))
       (save "test2.pdf"))
-
-    (do-pdf
-      (add-content-stream!)
-      (content-stream))
 
   (let [doc (PDDocument.)
         page (PDPage.)]
