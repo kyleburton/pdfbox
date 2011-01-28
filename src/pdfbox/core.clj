@@ -76,19 +76,40 @@
     (catch java.io.IOException e
       :ok)))
 
-(defn write-text [text]
+(defn ensure-content-stream []
+  (if (not (content-stream))
+    (add-content-stream!)))
+
+(defn move-text-position [p1 p2]
+  (ensure-content-stream)
+  (begin-text)
+  (.moveTextPositionByAmount (content-stream) p1 p2))
+
+(defn write-line [text]
+  (ensure-content-stream)
   (begin-text)
   (.setFont (content-stream) PDType1Font/HELVETICA_BOLD 12)
-  (.moveTextPositionByAmount (content-stream) 100 700)
-  (.drawString (content-stream) text))
+  (.drawString (content-stream) text)
+  (move-text-position 0 (- (font-height PDType1Font/HELVETICA_BOLD)))
+)
+
+;; height*fontSize*1.05f;
+(defn font-height [fnt]
+  (* 1.05     ;; factor
+     12       ;; font-size
+     (/ (-> fnt .getFontDescriptor .getFontBoundingBox .getHeight)
+        1000)))
 
 (comment
+  (font-height PDType1Font/HELVETICA_BOLD)
 
     (do-pdf
-      (add-content-stream!)
-      (write-text "some stuff, closed")
-      ;;(.endText (content-stream))
+      (move-text-position 100 700)
+      (write-line "some stuff, top")
+      (write-line "some stuff, bottom")
       (save "test2.pdf"))
+
+    ;; (font.getStringWidth( lineWithNextWord )/1000) * fontSize;
 
   (let [doc (PDDocument.)
         page (PDPage.)]
