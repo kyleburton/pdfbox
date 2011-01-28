@@ -97,13 +97,19 @@
   (begin-text)
   (.moveTextPositionByAmount (content-stream) p1 p2))
 
-(defn write-line [text]
+
+(defn write-text [text]
   (ensure-content-stream)
   (begin-text)
   (.setFont (content-stream) (font) (font-size))
-  (.drawString (content-stream) text)
-  (move-text-position 0 (- (font-height (font))))
-)
+  (.drawString (content-stream) text))
+
+(defn write-line [text]
+  (write-text text)
+  (move-text-position 0 (- (font-height (font)))))
+
+(defn write-linef [& args]
+  (write-line (apply format args)))
 
 ;; height*fontSize*1.05f;
 (defn font-height [fnt]
@@ -115,11 +121,18 @@
 (comment
   (font-height PDType1Font/HELVETICA_BOLD)
 
+  ;; TODO: looks like a page is ~780?  How do we tell what the page dimensions are?
+  ;; TODO: how to know when to wrap a line?
+  ;; TODO: how to know when to create another page
+  ;; TODO: when creating pages, understand the document strucutre: i.e. table of contents, header / footer
     (do-pdf
-      (move-text-position 100 700)
+      (move-text-position 40 760)
       (write-line "some stuff, top")
       (font-size 24)
       (write-line "some stuff, bottom")
+      (doseq [x (range 100)]
+        (font-size (+ 1 (/ x 10)))
+        (write-linef "ii: %d" x))
       (save "test2.pdf"))
 
     ;; (font.getStringWidth( lineWithNextWord )/1000) * fontSize;
