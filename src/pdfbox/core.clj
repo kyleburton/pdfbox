@@ -19,8 +19,8 @@
                             :finalizers []})]
      (prog1
          (do
-           ~@body
-           (fire-finalizers!)))))
+           ~@body)
+       (fire-finalizers!))))
 
 (defn document []
   (:document @*pdf*))
@@ -61,27 +61,30 @@
 
 (defn draw-text [text])
 
+(defn- begin-text []
+  (try
+    (.beginText (content-stream))
+    (catch java.io.IOException e
+      :ok)))
+
+(defn write-text [text]
+  (begin-text)
+  (.setFont (content-stream) PDType1Font/HELVETICA_BOLD 12)
+  (.moveTextPositionByAmount (content-stream) 100 700)
+  (.drawString (content-stream) text))
+
+
 (comment
 
     (do-pdf
       (add-content-stream!)
-      (.beginText (content-stream))
-      (.setFont (content-stream) PDType1Font/HELVETICA_BOLD 12)
-      (.moveTextPositionByAmount (content-stream) 100 700)
-      (.drawString (content-stream) "Hello World..")
+      (write-text "some stuff")
       (.endText (content-stream))
       (save "test2.pdf"))
 
     (do-pdf
-      (add-page!)
       (add-content-stream!)
-      (.beginText (content-stream))
-      (.setFont (content-stream) PDType1Font/HELVETICA_BOLD 12)
-      (.moveTextPositionByAmount (content-stream) 100 700)
-      (.drawString (content-stream) "Hello World")
-      (.endText (content-stream))
-      (.close (content-stream))
-      (save "test2.pdf"))
+      (content-stream))
 
   (let [doc (PDDocument.)
         page (PDPage.)]
