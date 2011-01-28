@@ -31,6 +31,18 @@
 (defn current-page []
   (:current-page @*pdf*))
 
+(defn add-content-stream! []
+  (let [cs (PDPageContentStream. (document)
+                                 (current-page))]
+    (swap! *pdf* assoc :content-stream cs)))
+
+(defn content-stream []
+  (:content-stream @*pdf*))
+
+(defn save [file]
+  (.save (document) file))
+
+
 (comment
 
   (do-pdf
@@ -42,6 +54,17 @@
       (.drawString content-stream "Hello World")
       (.endText content-stream))
     (save "test2.pdf"))
+
+    (do-pdf
+      (add-page!)
+      (add-content-stream!)
+      (.beginText (content-stream))
+      (.setFont (content-stream) PDType1Font/HELVETICA_BOLD 12)
+      (.moveTextPositionByAmount (content-stream) 100 700)
+      (.drawString (content-stream) "Hello World")
+      (.endText (content-stream))
+      (.close (content-stream))
+      (save "test2.pdf"))
 
   (let [doc (PDDocument.)
         page (PDPage.)]
